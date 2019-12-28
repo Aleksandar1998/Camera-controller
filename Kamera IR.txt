@@ -1,0 +1,84 @@
+#include <IRremote.h>
+//F786 crvena
+//F746 plava
+//C578 +
+//C5F8 -
+//F72B enter
+//F7B6 cancel
+IRsend irsend;
+const int RECV_PIN = 7;
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+unsigned long vreme = 0;
+bool cek = false;
+int k = 0;
+int cekanje = 0;
+void setup(){
+  Serial.begin(9600);
+  irrecv.enableIRIn();
+  irrecv.blink13(true);
+
+}
+
+void loop(){
+    /*Ako je unesen broj sekundi na koji zelimo da se signal salje 
+     * flag "cek" ulazi u loop koji ce raditi sve dok se ne pritisne dugme cancel
+     */
+    if(cek == true){
+      while(true){
+        
+        if(irrecv.decode(&results)){
+          
+          break;}
+        if(millis() > vreme + cekanje){
+          vreme = millis();
+          Serial.println(k);
+          irsend.sendNEC(0x80BFA15E, 32);
+          }
+        
+        
+        }
+      
+      }
+          
+    if(irrecv.decode(&results)){
+   
+        //Serial.println(results.value, HEX);
+        /*ako je cek false to znaci da sekunde jos nisu unete i pritiskom na dugme
+         * volumeUP se brojac povecava sto se kasnije stavlja 
+         * u vreme cekanja i mnozi sa hiljadu da bi se dobile milisekunde
+         */
+        if(cek == false){
+          if(results.value == 0xC578){
+            k++;
+            cekanje = k*1000;
+            Serial.println(cekanje);
+            }
+            /*ista stvar kao sa pojacavanjem samo 
+             * sto je ovde rec o smanjivanju i moguce je brojac smanjivati sve do 0
+             */
+          if(results.value == 0xC5F8 && k > 0){
+            k--;
+            cekanje = k*1000;
+            Serial.println(cekanje);
+            }
+        }
+        if(results.value == 0xF72B && cek == false){
+          cek = true;
+          Serial.println("cek = true");
+          return;
+          }
+        if(results.value == 0xF7B6 && cek == true){
+          
+          cek = false;
+          Serial.println("cek = false");
+          }
+        
+         
+        irrecv.resume();
+  }
+
+}
+         
+  
+        
